@@ -16,6 +16,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 import java.util.List;
 
@@ -27,8 +28,6 @@ import cn.nicemorning.mymirror.view.PictureView;
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback,
         SeekBar.OnSeekBarChangeListener, View.OnTouchListener, View.OnClickListener,
         FunctionView.OnFunctionViewItemClickListener {
-
-
     private static final String TAG = MainActivity.class.getSimpleName();
     private SurfaceHolder holder;
     private SurfaceView mSurface;
@@ -47,6 +46,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private int everyFocus;
     private int nowFocus;
     private Camera camera;
+    private int frame_index;
+    private int[] frame_index_ID;
+    private static final int PHOTO = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +56,10 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         setContentView(R.layout.activity_main);
         initView();
         setViews();
+        frame_index = 0;
+        frame_index_ID = new int[]{R.mipmap.mag_0001, R.mipmap.mag_0003, R.mipmap.mag_0005,
+                R.mipmap.mag_0006, R.mipmap.mag_0007, R.mipmap.mag_0008, R.mipmap.mag_0009,
+                R.mipmap.mag_0011, R.mipmap.mag_0012, R.mipmap.mag_0014};
     }
 
     private void initView() {
@@ -284,6 +290,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     @Override
     public void choose() {
+        Intent intent = new Intent(this, PhotoFrameActivity.class);
+        startActivityForResult(intent, PHOTO);
+        Toast.makeText(this, "选择！", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -294,5 +303,16 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     public void up() {
 
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Log.d(TAG, "Return:" + resultCode + "\t\t Request:" + requestCode);
+        if (resultCode == RESULT_OK && requestCode == PHOTO) {
+            int position = data.getIntExtra("POSITION", 0);
+            frame_index = position;
+            Log.d(TAG, "Mirror frame:" + position);
+        }
     }
 }
