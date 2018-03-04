@@ -206,6 +206,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         mAdd.setOnTouchListener(this);
         mMinus.setOnTouchListener(this);
         mSeekbar.setOnSeekBarChangeListener(this);
+        mFunction.setOnFunctionViewItemClickListener(this);
     }
 
     private void setZoomValues(int want) {
@@ -253,7 +254,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 minusZoomValues();
                 break;
             case R.id.picture:
-                //TODO:添加手势识别
+                //添加手势识别
                 break;
             default:
                 break;
