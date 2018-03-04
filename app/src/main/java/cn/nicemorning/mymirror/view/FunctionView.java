@@ -15,8 +15,11 @@ import cn.nicemorning.mymirror.R;
 
 public class FunctionView extends LinearLayout implements View.OnClickListener {
     private LayoutInflater inflater;
-
     private OnFunctionViewItemClickListener listener;
+    private static final int HINT_ID = R.id.hint;
+    private static final int CHOOSE_ID = R.id.choose;
+    private static final int DOWN_ID = R.id.light_down;
+    private static final int UP_ID = R.id.light_up;
 
     /**
      * Callback interface
@@ -56,6 +59,10 @@ public class FunctionView extends LinearLayout implements View.OnClickListener {
      */
     @Override
     public void onClick(View v) {
+
+    }
+
+    private void setView() {
 
     }
 }
