@@ -18,4 +18,4 @@ Adapt to a newer version of the system is on plan.
 This app used brokenview 1.0.3
 add lines in your build.gradle(Module:app)
 
-'''compile 'com.zys:brokenview:1.0.3'''
+``compile 'com.zys:brokenview:1.0.3``
