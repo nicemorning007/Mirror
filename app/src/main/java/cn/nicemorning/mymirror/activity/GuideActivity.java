@@ -1,4 +1,4 @@
-package cn.nicemorning.mymirror;
+package cn.nicemorning.mymirror.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -7,7 +7,7 @@ import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
 
-import cn.nicemorning.mymirror.activity.MainActivity;
+import cn.nicemorning.mymirror.R;
 
 public class GuideActivity extends AppCompatActivity {
 

@@ -21,6 +21,7 @@ import android.widget.Toast;
 import java.util.List;
 
 import cn.nicemorning.mymirror.R;
+import cn.nicemorning.mymirror.util.SetBrightness;
 import cn.nicemorning.mymirror.view.DrawView;
 import cn.nicemorning.mymirror.view.FunctionView;
 import cn.nicemorning.mymirror.view.PictureView;
@@ -49,6 +50,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private int frame_index;
     private int[] frame_index_ID;
     private static final int PHOTO = 1;
+    private int brightnessValue;
+    private boolean isAutoBrightness;
+    private int segmentLengh;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -297,12 +301,12 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     @Override
     public void down() {
-
+        downCurrentActivityBrightnessValues();
     }
 
     @Override
     public void up() {
-
+        upCurrentActivityBrightnessValues();
     }
 
     @Override
@@ -313,6 +317,47 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
             int position = data.getIntExtra("POSITION", 0);
             frame_index = position;
             Log.d(TAG, "Mirror frame:" + position);
+            mPicture.setPhotoFrame(position);
         }
     }
+
+    private void setMyActivityBright(int brightnessValue) {
+        SetBrightness.setBrightness(this, brightnessValue);
+        SetBrightness.saveBrightness(SetBrightness.getResolver(this), brightnessValue);
+    }
+
+    private void getAfterMySetBrightnessValues() {
+        brightnessValue = SetBrightness.getScreenBrightness(this);
+        Log.d(TAG, "Now Brightness:" + brightnessValue);
+    }
+
+    public void getBrightnessFromWindow() {
+        isAutoBrightness = SetBrightness.isAutoBrightness(SetBrightness.getResolver(this));
+        Log.d(TAG, "Is now auto change brightness:" + isAutoBrightness);
+        if (isAutoBrightness) {
+            SetBrightness.stopAutoBrightness(this);
+            Log.d(TAG, "Auto change brightness is now closed!");
+            setMyActivityBright(255 / 2 + 1);
+        }
+        segmentLengh = (255 / 2 + 1) / 4;
+        getAfterMySetBrightnessValues();
+    }
+
+    private void downCurrentActivityBrightnessValues() {
+        if (brightnessValue > 0) {
+            setMyActivityBright(brightnessValue - segmentLengh);
+        }
+        getAfterMySetBrightnessValues();
+    }
+
+    private void upCurrentActivityBrightnessValues() {
+        if (brightnessValue < 255) {
+            if (brightnessValue + segmentLengh >= 256) {
+                return;
+            }
+            setMyActivityBright(brightnessValue + segmentLengh);
+        }
+        getAfterMySetBrightnessValues();
+    }
+
 }
