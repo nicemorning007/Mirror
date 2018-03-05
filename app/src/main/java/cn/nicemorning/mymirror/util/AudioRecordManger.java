@@ -72,7 +72,6 @@ public class AudioRecordManger {
                 }
             }
         }).start();
-
     }
 
 }

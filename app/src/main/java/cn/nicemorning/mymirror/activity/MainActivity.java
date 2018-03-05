@@ -3,24 +3,36 @@ package cn.nicemorning.mymirror.activity;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.Paint;
 import android.hardware.Camera;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
+import com.zys.brokenview.BrokenCallback;
+import com.zys.brokenview.BrokenTouchListener;
+import com.zys.brokenview.BrokenView;
+
 import java.util.List;
 
 import cn.nicemorning.mymirror.R;
+import cn.nicemorning.mymirror.util.AudioRecordManger;
 import cn.nicemorning.mymirror.util.SetBrightness;
 import cn.nicemorning.mymirror.view.DrawView;
 import cn.nicemorning.mymirror.view.FunctionView;
@@ -28,7 +40,7 @@ import cn.nicemorning.mymirror.view.PictureView;
 
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback,
         SeekBar.OnSeekBarChangeListener, View.OnTouchListener, View.OnClickListener,
-        FunctionView.OnFunctionViewItemClickListener {
+        FunctionView.OnFunctionViewItemClickListener, DrawView.OnCaYiCaCompleteListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private SurfaceHolder holder;
     private SurfaceView mSurface;
@@ -53,6 +65,15 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private int brightnessValue;
     private boolean isAutoBrightness;
     private int segmentLengh;
+    private AudioRecordManger audioRecordManger;
+    private static final int RECORD = 2;
+    private BrokenView brokenView;
+    private boolean isBroken;
+    private BrokenTouchListener brokenTouchListener;
+    private MyBrokenCallback callback;
+    private Paint paint;
+    private GestureDetector gestureDetector;
+    private MySimpleGestureListener mySimpleGestureListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +85,10 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         frame_index_ID = new int[]{R.mipmap.mag_0001, R.mipmap.mag_0003, R.mipmap.mag_0005,
                 R.mipmap.mag_0006, R.mipmap.mag_0007, R.mipmap.mag_0008, R.mipmap.mag_0009,
                 R.mipmap.mag_0011, R.mipmap.mag_0012, R.mipmap.mag_0014};
+        audioRecordManger = new AudioRecordManger(handler, RECORD);
+        audioRecordManger.getNoiseLevel();
+        mySimpleGestureListener = new MySimpleGestureListener();
+        gestureDetector = new GestureDetector(this, mySimpleGestureListener);
     }
 
     private void initView() {
@@ -217,6 +242,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         mMinus.setOnTouchListener(this);
         mSeekbar.setOnSeekBarChangeListener(this);
         mFunction.setOnFunctionViewItemClickListener(this);
+        mPicture.setOnTouchListener(this);
+        mDrawGlasses.setCaYiCaCompleteListener(this);
+        setBrokenView();
     }
 
     private void setZoomValues(int want) {
@@ -264,7 +292,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 minusZoomValues();
                 break;
             case R.id.picture:
-                //添加手势识别
+                gestureDetector.onTouchEvent(motionEvent);
                 break;
             default:
                 break;
@@ -358,6 +386,111 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
             setMyActivityBright(brightnessValue + segmentLengh);
         }
         getAfterMySetBrightnessValues();
+    }
+
+    private void hideView() {
+        mBottomBar.setVisibility(View.INVISIBLE);
+        mFunction.setVisibility(View.GONE);
+    }
+
+    private void showView() {
+        mPicture.setImageBitmap(null);
+        mBottomBar.setVisibility(View.VISIBLE);
+        mFunction.setVisibility(View.VISIBLE);
+    }
+
+    private void getSoundValues(double values) {
+        if (values > 50) {
+            hideView();
+            mDrawGlasses.setVisibility(View.VISIBLE);
+            Animation animation = AnimationUtils.loadAnimation(this, R.anim.in_window);
+            mDrawGlasses.setAnimation(animation);
+            audioRecordManger.isGetVoiceRun = false;
+            Log.d("玻璃显示", "执行");
+        }
+    }
+
+    private Handler handler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+            switch (msg.what) {
+                case RECORD:
+                    double soundValues = (double) msg.obj;
+                    getSoundValues(soundValues);
+                    break;
+                default:
+                    break;
+            }
+            return false;
+        }
+    });
+
+    @Override
+    public void complete() {
+        showView();
+        audioRecordManger.getNoiseLevel();
+        mDrawGlasses.setVisibility(View.GONE);
+    }
+
+    class MyBrokenCallback extends BrokenCallback {
+        @Override
+        public void onStart(View v) {
+            super.onStart(v);
+            Log.d(TAG, "onStart");
+        }
+
+        @Override
+        public void onFalling(View v) {
+            super.onFalling(v);
+            Log.d(TAG, "onFalling");
+        }
+
+        @Override
+        public void onFallingEnd(View v) {
+            super.onFallingEnd(v);
+            Log.d(TAG, "onFallingEnd");
+            brokenView.reset();
+            mPicture.setOnTouchListener(MainActivity.this);
+            mPicture.setVisibility(View.VISIBLE);
+            isBroken = false;
+            Log.d(TAG, isBroken + " ");
+            brokenView.setEnable(isBroken);
+            audioRecordManger.getNoiseLevel();
+            showView();
+        }
+
+        @Override
+        public void onCancelEnd(View v) {
+            super.onCancelEnd(v);
+            Log.d(TAG, "onCancelEnd");
+        }
+    }
+
+    private void setBrokenView() {
+        paint = new Paint();
+        paint.setStrokeWidth(5);
+        paint.setColor(Color.BLACK);
+        paint.setAntiAlias(true);
+        brokenView = BrokenView.add2Window(this);
+        brokenTouchListener = new BrokenTouchListener.Builder(brokenView).setPaint(paint).
+                setBreakDuration(2000).setFallDuration(5000).build();
+        brokenView.setEnable(true);
+        callback = new MyBrokenCallback();
+        brokenView.setCallback(callback);
+    }
+
+    class MySimpleGestureListener extends GestureDetector.SimpleOnGestureListener {
+
+        @Override
+        public void onLongPress(MotionEvent motionEvent) {
+            super.onLongPress(motionEvent);
+            Log.d(TAG, "LongPress");
+            isBroken = true;
+            brokenView.setEnable(isBroken);
+            mPicture.setOnTouchListener(brokenTouchListener);
+            hideView();
+            audioRecordManger.isGetVoiceRun = false;
+        }
     }
 
 }
